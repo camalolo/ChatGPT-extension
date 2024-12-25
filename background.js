@@ -11,6 +11,11 @@ chrome.runtime.onInstalled.addListener(() => {
     contexts: ["selection"]
   });
   chrome.contextMenus.create({
+    id: "sendToClaudeAi",
+    title: "Send to Claude",
+    contexts: ["selection"]
+  });
+  chrome.contextMenus.create({
     id: "readSelectedText",
     title: "Read Text Aloud",
     contexts: ["selection"]
@@ -78,6 +83,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const chatGPTUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(prompt)}`;
     chrome.tabs.create({ url: chatGPTUrl });
   }
+  else if (info.menuItemId === "sendToClaudeAi" && info.selectionText) {
+    const prompt = `Explain what the following text means: ${info.selectionText}`;
+    const chatGPTUrl = `https://claude.ai/new?q=${encodeURIComponent(prompt)}`;
+    chrome.tabs.create({ url: chatGPTUrl });
+  }
   else if (info.menuItemId === "readSelectedText" && info.selectionText) {
     try {
       console.log('Read Text Aloud clicked');
@@ -93,6 +103,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         return;
       }
       
+      // Inside the readSelectedText handler, before the fetch call:
+      await showLoadingIndicator(tab.id);
+
       const response = await fetch('https://api.openai.com/v1/audio/speech', {
         method: 'POST',
         headers: {
@@ -115,21 +128,18 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       const audioBlob = await response.blob();
       const audioBase64 = await blobToBase64(audioBlob);
       
-      // Show the playing indicator
-      await showPlayingIndicator(tab.id);
-      
-      // Inject and execute script in the active tab
+      // Then modify the script injection part to remove the loading indicator:
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: (audioBase64) => {
-          // Create indicator element if it doesn't exist
-          let indicator = document.querySelector('.tts-playing-indicator');
-          if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.className = 'tts-playing-indicator';
-            indicator.textContent = 'Playing audio...';
-            document.body.appendChild(indicator);
-          }
+          // Remove loading indicator if exists
+          document.querySelector('.tts-loading-indicator')?.remove();
+          
+          // Create playing indicator
+          let indicator = document.createElement('div');
+          indicator.className = 'tts-playing-indicator';
+          indicator.textContent = 'Playing audio...';
+          document.body.appendChild(indicator);
 
           const audio = new Audio(audioBase64);
           
@@ -150,3 +160,46 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }
   }
 });
+
+// Add this new function for the loading indicator
+async function showLoadingIndicator(tabId) {
+  await chrome.scripting.insertCSS({
+    target: { tabId },
+    css: `
+      .tts-loading-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 20px;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: system-ui, -apple-system, sans-serif;
+        animation: slideIn 0.3s ease-out;
+      }
+      .tts-loading-indicator::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        animation: pulse 1s infinite;
+      }
+    `
+  });
+
+  // Inject the loading indicator
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      let indicator = document.createElement('div');
+      indicator.className = 'tts-loading-indicator';
+      indicator.textContent = 'Getting audio...';
+      document.body.appendChild(indicator);
+    }
+  });
+}

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AI Explain & Read",
+  "name": "AI Explain and Read",
   "version": "1.0",
   "description": "Send selected text to an AI and ask for what it means, or read it in natural voice.",
   "permissions": [

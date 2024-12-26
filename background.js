@@ -31,6 +31,12 @@ async function blobToBase64(blob) {
   });
 }
 
+let ttsTimeout;
+function debouncedTTS(callback, delay = 300) {
+  if (ttsTimeout) clearTimeout(ttsTimeout);
+  ttsTimeout = setTimeout(callback, delay);
+}
+
 // Function to inject the visual indicator
 async function showPlayingIndicator(tabId) {
   await chrome.scripting.insertCSS({
@@ -89,75 +95,101 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     chrome.tabs.create({ url: chatGPTUrl });
   }
   else if (info.menuItemId === "readSelectedText" && info.selectionText) {
-    try {
-      console.log('Read Text Aloud clicked');
-      
-      // Get the API key and voice selection from storage
-      const result = await chrome.storage.sync.get(['openaiApiKey', 'selectedVoice']);
-      const apiKey = result.openaiApiKey;
-      const voice = result.selectedVoice || 'alloy'; // fallback to alloy if not set
-      
-      if (!apiKey) {
-        console.log('No API key found, opening options page');
-        chrome.runtime.openOptionsPage();
-        return;
+    debouncedTTS(async () => {
+      try {
+        console.log('Read Text Aloud clicked');
+        
+        // Get the API key and voice selection from storage
+        const result = await chrome.storage.sync.get(['openaiApiKey', 'selectedVoice']);
+        const apiKey = result.openaiApiKey;
+        const voice = result.selectedVoice || 'alloy';
+        
+        if (!apiKey) {
+          console.log('No API key found, opening options page');
+          chrome.runtime.openOptionsPage();
+          return;
+        }
+        
+        // Show loading indicator and ensure playing indicator CSS is injected
+        await showLoadingIndicator(tab.id);
+
+        const response = await fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'tts-1',
+            input: info.selectionText,
+            voice: voice
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Response not OK:', response.status, errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        await showPlayingIndicator(tab.id);
+
+        const audioBlob = await response.blob();
+        const audioBase64 = await blobToBase64(audioBlob);
+        
+        // Update the script injection to use the pre-injected CSS
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: (audioBase64) => {
+            // Remove loading indicator if exists
+            document.querySelector('.tts-loading-indicator')?.remove();
+            
+            // Create playing indicator
+            const indicator = document.createElement('div');
+            indicator.className = 'tts-playing-indicator';
+            indicator.textContent = 'Playing audio...';
+            document.body.appendChild(indicator);
+
+            const audio = new Audio(audioBase64);
+            
+            audio.onended = () => {
+              indicator.remove();
+            };
+            
+            audio.play();
+          },
+          args: [audioBase64]
+        });
+        
+      } catch (error) {
+        console.error('Error in text-to-speech process:', error);
+        
+        let errorMessage = 'An error occurred';
+        if (error.message.includes('401')) {
+          errorMessage = 'Invalid API key. Please check your settings.';
+          chrome.runtime.openOptionsPage();
+        } else if (error.message.includes('429')) {
+          errorMessage = 'Rate limit exceeded. Please try again later.';
+        } else if (!navigator.onLine) {
+          errorMessage = 'No internet connection';
+        }
+        
+        // Show error to user
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: (message) => {
+            document.querySelector('.tts-loading-indicator')?.remove();
+            // Show error notification
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'tts-error-indicator';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 3000);
+          },
+          args: [errorMessage]
+        });
       }
-      
-      // Inside the readSelectedText handler, before the fetch call:
-      await showLoadingIndicator(tab.id);
-
-      const response = await fetch('https://api.openai.com/v1/audio/speech', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'tts-1',
-          input: info.selectionText,
-          voice: voice
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Response not OK:', response.status, errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const audioBlob = await response.blob();
-      const audioBase64 = await blobToBase64(audioBlob);
-      
-      // Then modify the script injection part to remove the loading indicator:
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: (audioBase64) => {
-          // Remove loading indicator if exists
-          document.querySelector('.tts-loading-indicator')?.remove();
-          
-          // Create playing indicator
-          let indicator = document.createElement('div');
-          indicator.className = 'tts-playing-indicator';
-          indicator.textContent = 'Playing audio...';
-          document.body.appendChild(indicator);
-
-          const audio = new Audio(audioBase64);
-          
-          audio.onended = () => {
-            indicator.remove();
-          };
-          
-          audio.play();
-        },
-        args: [audioBase64]
-      });
-      
-    } catch (error) {
-      console.error('Error in text-to-speech process:', error);
-      if (error.message.includes('401')) {
-        chrome.runtime.openOptionsPage();
-      }
-    }
+    });
   }
 });
 

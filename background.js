@@ -1,20 +1,30 @@
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Extension installed/updated');
-  chrome.contextMenus.create({
-    id: "sendToChatGPT",
-    title: "Send to ChatGPT",
-    contexts: ["selection"]
+  
+  // Define menu items configuration
+  const menuItems = [
+    { action: 'explain', title: 'Explain whith' },
+    { action: 'factCheck', title: 'Fact Check with' }
+  ];
+  
+  const services = [
+    { id: 'ChatGPT', url: 'https://chat.openai.com/?model=gpt-4&q=' },
+    { id: 'Perplexity', url: 'https://www.perplexity.ai/search?q=' },
+    { id: 'Claude', url: 'https://claude.ai/new?q=' }
+  ];
+
+  // Create all menu items dynamically
+  menuItems.forEach(({ action, title }) => {
+    services.forEach(({ id, url }) => {
+      chrome.contextMenus.create({
+        id: `${action}${id}`,
+        title: `${title} ${id}`,
+        contexts: ["selection"]
+      });
+    });
   });
-  chrome.contextMenus.create({
-    id: "sendToPerplexityAi",
-    title: "Send to Perplexity",
-    contexts: ["selection"]
-  });
-  chrome.contextMenus.create({
-    id: "sendToClaudeAi",
-    title: "Send to Claude",
-    contexts: ["selection"]
-  });
+
+  // Create Read Text Aloud option
   chrome.contextMenus.create({
     id: "readSelectedText",
     title: "Read Text Aloud",
@@ -79,22 +89,7 @@ async function showPlayingIndicator(tabId) {
 }
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId === "sendToChatGPT" && info.selectionText) {
-    const prompt = `Explain what the following text means: ${info.selectionText}`;
-    const chatGPTUrl = `https://chat.openai.com/?model=gpt-4&q=${encodeURIComponent(prompt)}`;
-    chrome.tabs.create({ url: chatGPTUrl });
-  }
-  else if (info.menuItemId === "sendToPerplexityAi" && info.selectionText) {
-    const prompt = `Explain what the following text means: ${info.selectionText}`;
-    const chatGPTUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(prompt)}`;
-    chrome.tabs.create({ url: chatGPTUrl });
-  }
-  else if (info.menuItemId === "sendToClaudeAi" && info.selectionText) {
-    const prompt = `Explain what the following text means: ${info.selectionText}`;
-    const chatGPTUrl = `https://claude.ai/new?q=${encodeURIComponent(prompt)}`;
-    chrome.tabs.create({ url: chatGPTUrl });
-  }
-  else if (info.menuItemId === "readSelectedText" && info.selectionText) {
+  if (info.menuItemId === "readSelectedText" && info.selectionText) {
     debouncedTTS(async () => {
       try {
         console.log('Read Text Aloud clicked');
@@ -190,6 +185,25 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         });
       }
     });
+  }
+
+  // Handle AI service actions
+  if (info.selectionText) {
+    const services = {
+      ChatGPT: 'https://chat.openai.com/?model=gpt-4&q=',
+      Perplexity: 'https://www.perplexity.ai/search?q=',
+      Claude: 'https://claude.ai/new?q='
+    };
+
+    // Extract action and service from menuItemId
+    const isFactCheck = info.menuItemId.startsWith('factCheck');
+    const service = Object.keys(services).find(s => info.menuItemId.includes(s));
+
+    if (service) {
+      const prompt = `${isFactCheck ? 'Fact check' : 'Explain what'} the following text means: ${info.selectionText}`;
+      const url = `${services[service]}${encodeURIComponent(prompt)}`;
+      chrome.tabs.create({ url });
+    }
   }
 });
 

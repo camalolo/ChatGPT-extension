@@ -3,8 +3,10 @@ chrome.runtime.onInstalled.addListener(() => {
   
   // Define menu items configuration
   const menuItems = [
-    { action: 'explain', title: 'Explain whith' },
-    { action: 'factCheck', title: 'Fact Check with' }
+    { action: 'explain', title: 'Explain with' },
+    { action: 'factCheck', title: 'Fact Check with' },
+    { action: 'translateFr', title: 'Translate to French with' },
+    { action: 'translateEn', title: 'Translate to English with' }
   ];
   
   const services = [
@@ -16,11 +18,21 @@ chrome.runtime.onInstalled.addListener(() => {
   // Create all menu items dynamically
   menuItems.forEach(({ action, title }) => {
     services.forEach(({ id, url }) => {
-      chrome.contextMenus.create({
-        id: `${action}${id}`,
-        title: `${title} ${id}`,
-        contexts: ["selection"]
-      });
+      // Only use ChatGPT for translations
+      if ((action === 'translateFr' || action === 'translateEn') && id === 'ChatGPT') {
+        chrome.contextMenus.create({
+          id: `${action}${id}`,
+          title: `${title} ${id}`,
+          contexts: ["selection"]
+        });
+      } else if (action !== 'translateFr' && action !== 'translateEn') {
+        // For non-translation actions, create menu items for all services
+        chrome.contextMenus.create({
+          id: `${action}${id}`, 
+          title: `${title} ${id}`,
+          contexts: ["selection"]
+        });
+      }
     });
   });
 
@@ -197,10 +209,22 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     // Extract action and service from menuItemId
     const isFactCheck = info.menuItemId.startsWith('factCheck');
+    const isTranslateFr = info.menuItemId.startsWith('translateFr');
+    const isTranslateEn = info.menuItemId.startsWith('translateEn');
     const service = Object.keys(services).find(s => info.menuItemId.includes(s));
 
     if (service) {
-      const prompt = `${isFactCheck ? 'Fact check' : 'Explain what'} the following text means: ${info.selectionText}`;
+      let prompt;
+      if (isFactCheck) {
+        prompt = `Fact check for truthfulness the following text: ${info.selectionText}`;
+      } else if (isTranslateFr) {
+        prompt = `Translate the following text to French: ${info.selectionText}`;
+      } else if (isTranslateEn) {
+        prompt = `Translate the following text to English: ${info.selectionText}`;
+      } else {
+        prompt = `Explain the meaning of the following text: ${info.selectionText}`;
+      }
+      
       const url = `${services[service]}${encodeURIComponent(prompt)}`;
       chrome.tabs.create({ url });
     }

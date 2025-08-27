@@ -7,7 +7,9 @@ chrome.runtime.onInstalled.addListener(() => {
     { action: 'factCheck', title: 'Fact Check with' },
     { action: 'translateFr', title: 'Translate to French with' },
     { action: 'translateEn', title: 'Translate to English with' },
-    { action: 'spellCheck', title: 'Spellcheck with' }
+    { action: 'spellCheck', title: 'Spellcheck with' },
+    { action: 'weiWuTranslate', title: 'WeiWu Translator' },
+    { action: 'fixGrammar', title: 'Fix Grammar with' }
   ];
   
   const services = [
@@ -19,17 +21,17 @@ chrome.runtime.onInstalled.addListener(() => {
   // Create all menu items dynamically
   menuItems.forEach(({ action, title }) => {
     services.forEach(({ id, url }) => {
-      // Only use ChatGPT for translations
-      if ((action === 'translateFr' || action === 'translateEn' || action === 'spellCheck') && id === 'ChatGPT') {
+      const restrictedActions = new Set(['translateFr', 'translateEn', 'spellCheck', 'weiWuTranslate', 'fixGrammar']);
+      if (restrictedActions.has(action) && id === 'ChatGPT') {
         chrome.contextMenus.create({
           id: `${action}${id}`,
           title: `${title} ${id}`,
           contexts: ["selection"]
         });
-      } else if (action !== 'translateFr' && action !== 'translateEn' && action !== 'spellCheck') {
-        // For non-translation actions, create menu items for all services
+      } else if (!restrictedActions.has(action)) {
+        // For non-restricted actions, create menu items for all services
         chrome.contextMenus.create({
-          id: `${action}${id}`, 
+          id: `${action}${id}`,
           title: `${title} ${id}`,
           contexts: ["selection"]
         });
@@ -213,6 +215,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const isTranslateFr = info.menuItemId.startsWith('translateFr');
     const isTranslateEn = info.menuItemId.startsWith('translateEn');
     const isSpellCheck = info.menuItemId.startsWith('spellCheck');
+    const isWeiWuTranslate = info.menuItemId.startsWith('weiWuTranslate');
+    const isFixGrammar = info.menuItemId.startsWith('fixGrammar');
     const service = Object.keys(services).find(s => info.menuItemId.includes(s));
 
     if (service) {
@@ -225,6 +229,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         prompt = `Translate the following text to English: ${info.selectionText}`;
       } else if (isSpellCheck) {
         prompt = `Perform a spellcheck of the following text: ${info.selectionText}`;
+      } else if (isWeiWuTranslate) {
+        prompt = `Translate text into Wei Wu style: broken English, no a/an/the, wrong verbs (be victory, society be collapsing), mix tenses (soon destroy, I'm believe), short choppy sentences, awkward word choice (possession, give me number 1 most confusion), exaggeration, funny memes or mild stereotypes if fit. Keep main meaning. Translate this text : ${info.selectionText}`;
+      } else if (isFixGrammar) {
+        prompt = `Fix the grammar and syntax of the following text so it is proper, respectful, and understandable by a third party: ${info.selectionText}`;
       } else {
         prompt = `Explain the meaning of the following text: ${info.selectionText}`;
       }

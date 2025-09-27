@@ -1,15 +1,6 @@
 chrome.runtime.onInstalled.addListener(() => {
 
   // Define menu items configuration
-  const menuItems = [
-    { action: 'explain', title: 'Explain with' },
-    { action: 'factCheck', title: 'Fact Check with' },
-    { action: 'translateFr', title: 'Translate to French with' },
-    { action: 'translateEn', title: 'Translate to English with' },
-    { action: 'spellCheck', title: 'Spellcheck with' },
-    { action: 'weiWuTranslate', title: 'WeiWu Translator' },
-    { action: 'fixGrammar', title: 'Fix Grammar with' }
-  ];
 
   const services = [
     { id: 'ChatGPT', url: 'https://chat.openai.com/?model=gpt-4&q=' }
@@ -28,8 +19,8 @@ chrome.runtime.onInstalled.addListener(() => {
   ];
 
   function createMenuItemsForGroup(group, separatorId) {
-    group.forEach(({ action, title }) => {
-      services.forEach(({ id }) => {
+    for (const { action, title } of group) {
+      for (const { id } of services) {
         if (restrictedActions.has(action) && id === 'ChatGPT') {
           chrome.contextMenus.create({
             id: `${action}${id}`,
@@ -43,8 +34,8 @@ chrome.runtime.onInstalled.addListener(() => {
             contexts: ["selection"]
           });
         }
-      });
-    });
+      }
+    }
     // Create separator after group
     chrome.contextMenus.create({
       id: separatorId,
@@ -65,64 +56,13 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 
   // Inject CSS for indicators once on install
-  injectIndicatorCSS();
-});
-
-// Function to inject CSS for TTS indicators
-function injectIndicatorCSS() {
-  const css = `
-    .tts-loading-indicator, .tts-playing-indicator, .tts-error-indicator {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 20px;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-family: system-ui, -apple-system, sans-serif;
-      animation: slideIn 0.3s ease-out;
-    }
-    .tts-loading-indicator::before, .tts-playing-indicator::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      background: #4ade80;
-      border-radius: 50%;
-    }
-    .tts-loading-indicator::before {
-      background: #ef4444;
-      animation: pulse 1s infinite;
-    }
-    .tts-playing-indicator::before {
-      animation: pulse 1s infinite;
-    }
-    .tts-error-indicator {
-      background: rgba(220, 38, 38, 0.8);
-    }
-    @keyframes slideIn {
-      from { transform: translateY(100px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
-  `;
-
-  // This will be injected when needed, but we can prepare it
-  // For now, keep the injection in the functions, but consolidated
-}
+  });
 
 async function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
+    reader.addEventListener('error', reject);
     reader.readAsDataURL(blob);
   });
 }
@@ -195,6 +135,15 @@ async function callOpenAIChatAPI(apiKey, model, prompt) {
   return data.choices[0].message.content.trim();
 }
 
+function isEditable(element) {
+  if (!element) return false;
+  if (element.isContentEditable) return true;
+  if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+    return !element.readOnly && !element.disabled;
+  }
+  return false;
+}
+
 async function handleFixGrammar(tabId, selectionText) {
   try {
     const result = await chrome.storage.sync.get(['openaiApiKey', 'selectedModel']);
@@ -210,31 +159,20 @@ async function handleFixGrammar(tabId, selectionText) {
     // Inject script to detect editable or read-only and replace or show popup
     await chrome.scripting.executeScript({
       target: { tabId },
-      func: (corrected) => {
-        function isEditable(element) {
-          if (!element) return false;
-          if (element.isContentEditable) return true;
-          if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-            return !element.readOnly && !element.disabled;
-          }
-          return false;
-        }
-
-        const selection = window.getSelection();
+      func: (corrected, isEditable) => {
+        const selection = globalThis.getSelection();
         if (!selection || selection.rangeCount === 0) return;
         const range = selection.getRangeAt(0);
         const commonAncestor = range.commonAncestorContainer;
-        let editableElement = null;
+        let editableElement;
 
         if (commonAncestor.nodeType === Node.ELEMENT_NODE) {
           if (isEditable(commonAncestor)) {
             editableElement = commonAncestor;
           }
-        } else if (commonAncestor.nodeType === Node.TEXT_NODE) {
-          if (isEditable(commonAncestor.parentElement)) {
+        } else if (commonAncestor.nodeType === Node.TEXT_NODE && isEditable(commonAncestor.parentElement)) {
             editableElement = commonAncestor.parentElement;
           }
-        }
 
         if (editableElement) {
           // Replace selected text in editable element
@@ -256,7 +194,7 @@ async function handleFixGrammar(tabId, selectionText) {
           popup.style.background = 'white';
           popup.style.border = '1px solid black';
           popup.style.padding = '8px';
-          popup.style.zIndex = 2147483647;
+          popup.style.zIndex = 2_147_483_647;
           popup.style.maxWidth = '300px';
           popup.style.whiteSpace = 'pre-wrap';
           popup.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
@@ -267,7 +205,7 @@ async function handleFixGrammar(tabId, selectionText) {
           popup.style.top = `${rect.bottom + 5}px`;
           popup.style.left = `${rect.left}px`;
 
-          document.body.appendChild(popup);
+          document.body.append(popup);
 
           // Remove popup on click or after 10 seconds
           function removePopup() {
@@ -275,10 +213,10 @@ async function handleFixGrammar(tabId, selectionText) {
             document.removeEventListener('click', removePopup);
           }
           document.addEventListener('click', removePopup);
-          setTimeout(removePopup, 10000);
+          setTimeout(removePopup, 10_000);
         }
       },
-      args: [correctedText]
+      args: [correctedText, isEditable]
     });
   } catch (error) {
     console.error('Error fixing grammar:', error);
@@ -290,17 +228,17 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "readSelectedText" && info.selectionText) {
     debouncedTTS(async () => {
       try {
-        
+
         // Get the API key and voice selection from storage
         const result = await chrome.storage.sync.get(['openaiApiKey', 'selectedVoice']);
         const apiKey = result.openaiApiKey;
         const voice = result.selectedVoice || 'alloy';
-        
+
         if (!apiKey) {
           chrome.runtime.openOptionsPage();
           return;
         }
-        
+
         // Show loading indicator and ensure playing indicator CSS is injected
         await showLoadingIndicator(tab.id);
 
@@ -327,34 +265,34 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
         const audioBlob = await response.blob();
         const audioBase64 = await blobToBase64(audioBlob);
-        
+
         // Update the script injection to use the pre-injected CSS
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: (audioBase64) => {
             // Remove loading indicator if exists
             document.querySelector('.tts-loading-indicator')?.remove();
-            
+
             // Create playing indicator
             const indicator = document.createElement('div');
             indicator.className = 'tts-playing-indicator';
             indicator.textContent = 'Playing audio...';
-            document.body.appendChild(indicator);
+            document.body.append(indicator);
 
             const audio = new Audio(audioBase64);
-            
-            audio.onended = () => {
+
+            audio.addEventListener('ended', () => {
               indicator.remove();
-            };
-            
+            });
+
             audio.play();
           },
           args: [audioBase64]
         });
-        
+
       } catch (error) {
-        console.error('Error in text-to-speech process:', error);
-        
+        console.error('TTS: Error in text-to-speech process:', error);
+
         let errorMessage = 'An error occurred';
         if (error.message.includes('401')) {
           errorMessage = 'Invalid API key. Please check your settings.';
@@ -364,7 +302,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         } else if (!navigator.onLine) {
           errorMessage = 'No internet connection';
         }
-        
+
         // Show error to user
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
@@ -374,7 +312,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'tts-error-indicator';
             errorDiv.textContent = message;
-            document.body.appendChild(errorDiv);
+            document.body.append(errorDiv);
             setTimeout(() => errorDiv.remove(), 3000);
           },
           args: [errorMessage]
@@ -417,7 +355,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           prompt = `Explain the meaning of the following text: ${info.selectionText}`;
         }
         
-        const url = `${services[service]}${encodeURIComponent(prompt)}`;
+        const url = `${services.ChatGPT}${encodeURIComponent(prompt)}`;
         chrome.tabs.create({ url });
       }
     }
@@ -471,7 +409,7 @@ async function showLoadingIndicator(tabId) {
       let indicator = document.createElement('div');
       indicator.className = 'tts-loading-indicator';
       indicator.textContent = 'Getting audio...';
-      document.body.appendChild(indicator);
+      document.body.append(indicator);
     }
   });
 }

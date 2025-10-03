@@ -9,7 +9,9 @@ chrome.runtime.onInstalled.addListener(() => {
   // Create menu items in groups with separators
   const restrictedActions = new Set(['translateFr', 'translateEn', 'spellCheck', 'weiWuTranslate', 'fixGrammar']);
   const group1 = [{ action: 'explain', title: 'Explain with' }];
-  const group2 = [{ action: 'factCheck', title: 'Fact Check with' }];
+  const group2 = [{ action: 'factCheck', title: 'Fact Check with' },
+    { action: 'searchFor', title: 'Search for this with' }
+  ];
   const group3 = [
     { action: 'translateFr', title: 'Translate to French with' },
     { action: 'translateEn', title: 'Translate to English with' },
@@ -329,6 +331,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     // Extract action and service from menuItemId
     const isFactCheck = info.menuItemId.startsWith('factCheck');
+    const isSearchFor = info.menuItemId.startsWith('searchFor');
     const isTranslateFr = info.menuItemId.startsWith('translateFr');
     const isTranslateEn = info.menuItemId.startsWith('translateEn');
     const isSpellCheck = info.menuItemId.startsWith('spellCheck');
@@ -343,6 +346,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         let prompt;
         if (isFactCheck) {
           prompt = `Fact check for truthfulness the following text: ${info.selectionText}`;
+        } else if (isSearchFor) {
+          prompt = `Search for the following term and summarize information you find : ${info.selectionText}`;
         } else if (isTranslateFr) {
           prompt = `Translate the following text to French: ${info.selectionText}`;
         } else if (isTranslateEn) {

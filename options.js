@@ -10,8 +10,8 @@ const voiceDescriptions = {
 
 // Fetch available models from OpenAI API
 async function fetchModels(apiKey) {
-  const modelSelect = document.getElementById('model');
-  const modelStatus = document.getElementById('modelStatus');
+  const modelSelect = document.querySelector('#model');
+  const modelStatus = document.querySelector('#modelStatus');
 
   if (!apiKey) {
     modelSelect.innerHTML = '<option value="">Enter API key first</option>';
@@ -36,15 +36,15 @@ async function fetchModels(apiKey) {
     const data = await response.json();
     const models = data.data
       .filter(model => model.id.startsWith('gpt-'))
-      .sort((a, b) => a.id.localeCompare(b.id));
+      .toSorted((a, b) => a.id.localeCompare(b.id));
 
     modelSelect.innerHTML = '<option value="">Select a model...</option>';
-    models.forEach(model => {
+    for (const model of models) {
       const option = document.createElement('option');
       option.value = model.id;
       option.textContent = model.id;
-      modelSelect.appendChild(option);
-    });
+      modelSelect.append(option);
+    }
 
     modelStatus.textContent = `Loaded ${models.length} models`;
     modelStatus.style.color = '#16a34a';
@@ -59,17 +59,17 @@ async function fetchModels(apiKey) {
 }
   
   // Update voice description when selection changes
-  document.getElementById('voice').addEventListener('change', (e) => {
-    const description = voiceDescriptions[e.target.value];
-    document.getElementById('voiceDescription').textContent = description;
+  document.querySelector('#voice').addEventListener('change', (event) => {
+    const description = voiceDescriptions[event.target.value];
+    document.querySelector('#voiceDescription').textContent = description;
   });
   
   // Saves options to chrome.storage
   async function saveOptions() {
-    const apiKey = document.getElementById('apiKey').value;
-    const model = document.getElementById('model').value;
-    const voice = document.getElementById('voice').value;
-    const status = document.getElementById('status');
+    const apiKey = document.querySelector('#apiKey').value;
+    const model = document.querySelector('#model').value;
+    const voice = document.querySelector('#voice').value;
+    const status = document.querySelector('#status');
   
     if (!apiKey) {
       status.textContent = 'Please enter an API key.';
@@ -105,7 +105,7 @@ async function fetchModels(apiKey) {
     }
   
     // Re-select the model after validation (since fetchModels clears the dropdown)
-    document.getElementById('model').value = model;
+    document.querySelector('#model').value = model;
   
     chrome.storage.sync.set(
       {
@@ -135,32 +135,32 @@ async function fetchModels(apiKey) {
         selectedVoice: 'alloy' // default value
       },
       async (items) => {
-        document.getElementById('apiKey').value = items.openaiApiKey;
-        document.getElementById('model').value = items.selectedModel;
-        document.getElementById('voice').value = items.selectedVoice;
+        document.querySelector('#apiKey').value = items.openaiApiKey;
+        document.querySelector('#model').value = items.selectedModel;
+        document.querySelector('#voice').value = items.selectedVoice;
         // Update description for restored voice
         const description = voiceDescriptions[items.selectedVoice];
-        document.getElementById('voiceDescription').textContent = description;
+        document.querySelector('#voiceDescription').textContent = description;
   
         // Fetch models if API key exists
         if (items.openaiApiKey) {
           await fetchModels(items.openaiApiKey);
-          document.getElementById('model').value = items.selectedModel;
+          document.querySelector('#model').value = items.selectedModel;
         }
       }
     );
   }
   
   // Fetch models when API key changes
-  document.getElementById('apiKey').addEventListener('input', async (e) => {
-    const apiKey = e.target.value.trim();
+  document.querySelector('#apiKey').addEventListener('input', async (event) => {
+    const apiKey = event.target.value.trim();
     if (apiKey) {
       await fetchModels(apiKey);
     } else {
-      document.getElementById('model').innerHTML = '<option value="">Enter API key first</option>';
-      document.getElementById('modelStatus').textContent = '';
+      document.querySelector('#model').innerHTML = '<option value="">Enter API key first</option>';
+      document.querySelector('#modelStatus').textContent = '';
     }
   });
   
   document.addEventListener('DOMContentLoaded', restoreOptions);
-  document.getElementById('save').addEventListener('click', saveOptions);
+  document.querySelector('#save').addEventListener('click', saveOptions);

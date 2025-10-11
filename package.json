@@ -1,6 +1,6 @@
 {
   "name": "chatgpt-extension",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "ChatGPT Buddy in Chrome",
   "main": "background.js",
   "scripts": {

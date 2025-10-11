@@ -48,36 +48,65 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Extension Settings</h1>
+ <div class="container">
+  <h1>Extension Settings</h1>
+
+  <h2>OpenAI Settings (for TTS and Grammar Fix)</h2>
+  <div class="form-group">
+    <label for="apiKey">OpenAI API Key:</label>
+    <input type="text" id="apiKey" placeholder="Enter your OpenAI API key">
+  </div>
+
+  <h2>Sidepanel LLM Configuration</h2>
+  <div class="form-group">
+    <label for="sidepanelProvider">Sidepanel AI Provider:</label>
+    <select id="sidepanelProvider">
+      <option value="openai">OpenAI</option>
+      <option value="openrouter">OpenRouter</option>
+    </select>
+  </div>
+  <div id="sidepanel-openai-settings" class="provider-settings">
     <div class="form-group">
-      <label for="apiKey">OpenAI API Key:</label>
-      <input type="text" id="apiKey" placeholder="Enter your OpenAI API key">
-    </div>
-    <div class="form-group">
-      <label for="model">OpenAI Model:</label>
-      <select id="model">
+      <label for="sidepanelModel">OpenAI Model:</label>
+      <select id="sidepanelModel">
         <option value="">Select a model...</option>
       </select>
-      <div id="modelStatus" style="margin-top: 4px; font-size: 0.9em;"></div>
+      <div id="sidepanelModelStatus" style="margin-top: 4px; font-size: 0.9em;"></div>
+    </div>
+  </div>
+  <div id="sidepanel-openrouter-settings" class="provider-settings" style="display: none;">
+    <div class="form-group">
+      <label for="sidepanelOpenrouterApiKey">OpenRouter API Key:</label>
+      <input type="text" id="sidepanelOpenrouterApiKey" placeholder="Enter your OpenRouter API key">
     </div>
     <div class="form-group">
-      <label for="voice">Text-to-Speech Voice:</label>
-      <select id="voice">
-        <option value="alloy">Alloy (Neutral)</option>
-        <option value="echo">Echo (Deep)</option>
-        <option value="fable">Fable (Soft)</option>
-        <option value="onyx">Onyx (Professional)</option>
-        <option value="nova">Nova (Warm)</option>
-        <option value="shimmer">Shimmer (Clear)</option>
+      <label for="sidepanelOpenrouterModel">OpenRouter Model:</label>
+      <select id="sidepanelOpenrouterModel">
+        <option value="">Select a model...</option>
       </select>
-      <div class="voice-description" id="voiceDescription">
-        Alloy - A neutral voice suitable for general use
-      </div>
+      <div id="sidepanelOpenrouterModelStatus" style="margin-top: 4px; font-size: 0.9em;"></div>
     </div>
-    <button id="save">Save Settings</button>
-    <div id="status"></div>
   </div>
+
+  <h2>Text-to-Speech Settings</h2>
+  <div class="form-group">
+    <label for="voice">Voice:</label>
+    <select id="voice">
+      <option value="alloy">Alloy (Neutral)</option>
+      <option value="echo">Echo (Deep)</option>
+      <option value="fable">Fable (Soft)</option>
+      <option value="onyx">Onyx (Professional)</option>
+      <option value="nova">Nova (Warm)</option>
+      <option value="shimmer">Shimmer (Clear)</option>
+    </select>
+    <div class="voice-description" id="voiceDescription">
+      Alloy - A neutral voice suitable for general use
+    </div>
+  </div>
+
+  <button id="save">Save Settings</button>
+  <div id="status"></div>
+</div>
   <script src="options.js"></script>
 </body>
 </html>

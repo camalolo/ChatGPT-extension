@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const messageInput = document.getElementById('message-input');
-    const sendButton = document.getElementById('send-button');
-    const clearButton = document.getElementById('clear-button');
-    const chatMessages = document.getElementById('chat-messages');
+    const messageInput = document.querySelector('#message-input');
+    const sendButton = document.querySelector('#send-button');
+    const clearButton = document.querySelector('#clear-button');
+    const chatMessages = document.querySelector('#chat-messages');
 
     let conversationHistory = [];
 
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessage(text, 'user');
         messageInput.value = '';
 
-        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingIndicator = document.querySelector('#loading-indicator');
         loadingIndicator.style.display = 'block';
 
         try {

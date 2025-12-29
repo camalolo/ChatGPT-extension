@@ -1,8 +1,8 @@
-# Privacy Policy for ChatGPT Buddy Chrome Extension
+# Privacy Policy for AI Buddy Chrome Extension
 
 ## Data Collection and Usage
 
-ChatGPT Buddy does **not** collect, store, or transmit any personal data from users. The extension operates entirely within your browser and only sends the text you select directly to OpenAI's API for processing.
+AI Buddy does **not** collect, store, or transmit any personal data from users. The extension operates entirely within your browser and only sends the text you select directly to OpenAI's API for processing.
 
 ## API Key Storage
 
@@ -20,11 +20,11 @@ The extension requires the following permissions to function properly:
 
 ## Third-Party Services
 
-ChatGPT Buddy uses OpenAI's API to provide AI-powered features. Please review OpenAI's [Privacy Policy](https://openai.com/policies/privacy-policy) for information on how your data is handled by OpenAI.
+AI Buddy uses OpenAI's API to provide AI-powered features. Please review OpenAI's [Privacy Policy](https://openai.com/policies/privacy-policy) for information on how your data is handled by OpenAI.
 
 ## Security
 
-All data processing happens over secure HTTPS connections. Your selected text and API key are only sent to OpenAI's servers and are not stored or logged by ChatGPT Buddy.
+All data processing happens over secure HTTPS connections. Your selected text and API key are only sent to OpenAI's servers and are not stored or logged by AI Buddy.
 
 ## Contact
 

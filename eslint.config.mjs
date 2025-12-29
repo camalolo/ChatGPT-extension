@@ -31,4 +31,8 @@ export default [
     files: ["**/*.js"],
     languageOptions: { sourceType: "script" },
   },
+  {
+    files: ["background.js", "context-menus.js", "messaging.js", "api.js", "tools.js", "tts.js", "utilities.js"],
+    languageOptions: { sourceType: "module" },
+  },
 ];

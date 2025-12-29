@@ -109,17 +109,19 @@ if [ "$SHOULD_TAG" = true ]; then
     exit 1
   fi
 
-  # Create GitHub release
-  echo "Creating GitHub release..."
-  CRX_FILE="dist/ai-buddy-v$CURRENT_MANIFEST_VERSION.crx"
-  if ! gh release create "v$CURRENT_MANIFEST_VERSION" \
-    --title "Release v$CURRENT_MANIFEST_VERSION" \
-    --generate-notes \
-    --latest \
-    "$CRX_FILE"; then
-    echo "Error: Failed to create GitHub release. Aborting."
-    exit 1
-  fi
+   # Create GitHub release
+   echo "Creating GitHub release..."
+   CRX_FILE="dist/ai-buddy-v$CURRENT_MANIFEST_VERSION.crx"
+   ZIP_FILE="dist/ai-buddy-v$CURRENT_MANIFEST_VERSION.zip"
+   if ! gh release create "v$CURRENT_MANIFEST_VERSION" \
+     --title "Release v$CURRENT_MANIFEST_VERSION" \
+     --generate-notes \
+     --latest \
+     "$CRX_FILE" \
+     "$ZIP_FILE"; then
+     echo "Error: Failed to create GitHub release. Aborting."
+     exit 1
+   fi
 
   # Push current branch to origin
   echo "Pushing changes to $GIT_REMOTE/$MAIN_BRANCH..."

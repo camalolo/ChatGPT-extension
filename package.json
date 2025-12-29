@@ -5,8 +5,8 @@
   "main": "background.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint .",
-    "pack": "node pack.mjs"
+    "lint": "eslint --config release/config/eslint.config.mjs .",
+    "pack": "node release/scripts/pack.mjs"
   },
   "repository": {
     "type": "git",

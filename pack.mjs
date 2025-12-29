@@ -17,7 +17,7 @@ async function packExtension() {
     }
 
     // Build the extension using web-ext (creates zip)
-    execSync('npx web-ext build --overwrite-dest', { stdio: 'inherit' });
+    execSync('npx web-ext build --overwrite-dest --ignore-files "dist/" "package.json" "package-lock.json" "eslint.config.mjs" "jsconfig.json" "README.md" "PRIVACY_POLICY.md" "pack.mjs" "tag_release.sh" "web-extension.crx"', { stdio: 'inherit' });
 
     // Move the generated zip to dist with a cleaner name
     const sourceZip = path.join('web-ext-artifacts', `ai_buddy-${version}.zip`);

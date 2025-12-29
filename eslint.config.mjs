@@ -44,6 +44,6 @@ export default [
     },
   },
   {
-    ignores: ["tag_release.sh", "key.pem", "dist/**", "web-ext-artifacts/**"],
+    ignores: ["tag_release.sh", "keys/**", "dist/**", "web-ext-artifacts/**"],
   },
 ];

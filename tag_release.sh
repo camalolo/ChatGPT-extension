@@ -111,12 +111,12 @@ if [ "$SHOULD_TAG" = true ]; then
 
   # Create GitHub release
   echo "Creating GitHub release..."
-  ZIP_FILE="dist/ai-buddy-v$CURRENT_MANIFEST_VERSION.zip"
+  CRX_FILE="dist/ai-buddy-v$CURRENT_MANIFEST_VERSION.crx"
   if ! gh release create "v$CURRENT_MANIFEST_VERSION" \
     --title "Release v$CURRENT_MANIFEST_VERSION" \
     --generate-notes \
     --latest \
-    "$ZIP_FILE"; then
+    "$CRX_FILE"; then
     echo "Error: Failed to create GitHub release. Aborting."
     exit 1
   fi

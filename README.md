@@ -106,3 +106,7 @@ The extension requires the following permissions:
 Repository: [https://github.com/camalolo/AiBuddy](https://github.com/camalolo/AiBuddy)
 
 Feel free to fork the repository, make improvements, and submit pull requests.
+
+## Icon Attribution
+
+<a href="https://www.flaticon.com/free-icons/artificial-intelligence" title="artificial-intelligence icons">Artificial-intelligence icons created by juicy_fish - Flaticon</a>
